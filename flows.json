@@ -1,0 +1,852 @@
+[
+    {
+        "id": "2916350a149f22e4",
+        "type": "tab",
+        "label": "Starlink Stats",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "902ce01e8799b348",
+        "type": "inject",
+        "z": "2916350a149f22e4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 60,
+        "wires": [
+            [
+                "de797d9b56dd07d2"
+            ]
+        ]
+    },
+    {
+        "id": "de797d9b56dd07d2",
+        "type": "exec",
+        "z": "2916350a149f22e4",
+        "command": "grpcurl -plaintext  -d {\\\"getStatus\\\":{}} 192.168.100.1:9200 SpaceX.API.Device.Device/Handle",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "GRPCURL to SPACE",
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "110dde575ea59476"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "110dde575ea59476",
+        "type": "json",
+        "z": "2916350a149f22e4",
+        "name": "convert to JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 150,
+        "y": 180,
+        "wires": [
+            [
+                "8003da5b56463565",
+                "775803c3dc8bd646"
+            ]
+        ]
+    },
+    {
+        "id": "8003da5b56463565",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Create Device Array",
+        "func": "  msg.device = {};\n  msg.device.identifiers = msg.payload.dishGetStatus.deviceInfo.id;\n  msg.device.name = \"Dishy\" ;\n  msg.device.model = msg.payload.dishGetStatus.deviceInfo.hardwareVersion ;\n  msg.device.sw_version = msg.payload.dishGetStatus.deviceInfo.softwareVersion ;\n//  device.configuration_url = msg.payload[i].url ;\n  msg.device.manufacturer = \"SpaceX\" ;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 160,
+        "y": 220,
+        "wires": [
+            [
+                "61b09428870c04a2"
+            ]
+        ]
+    },
+    {
+        "id": "61b09428870c04a2",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Move the Payload",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "oldpayload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 150,
+        "y": 260,
+        "wires": [
+            [
+                "c3da5a36aaa6328e",
+                "7770cbc99570d60c",
+                "4bb78b943bf62fee",
+                "d493f3f26c0c45e4",
+                "c21862cfa9cfa84b",
+                "172e5fe912a4b521",
+                "645dab750a116f7a"
+            ]
+        ]
+    },
+    {
+        "id": "c3da5a36aaa6328e",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Uptime Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Uptime\" ,\t   \"unique_id\" : msg.device.name & \"-\" & \"uptime\",\t   \"device_class\": \"duration\",\t   \"unit_of_measurement\": \"s\",\t   \"value_template\": \"{{value_json.uptimeS}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:timeline-clock\",\t   \"state_topic\": \"dishy/uptime\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/uptime/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 220,
+        "wires": [
+            [
+                "1cb3ecbb47e83622",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "7770cbc99570d60c",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Downlink Throughput Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Download\" ,\t   \"unique_id\" : msg.device.name & \"-downlinkmbps\",\t   \"unit_of_measurement\": \"Mbps\",\t   \"value_template\": \"{{value_json.downlinkThroughputmbps}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:chart-line\" ,\t   \"state_topic\": \"dishy/downlinkmbps\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/downlinkmbps/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 530,
+        "y": 180,
+        "wires": [
+            [
+                "09df530325c0fdb7",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "4bb78b943bf62fee",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Uplink Throughput Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Upload\" ,\t   \"unique_id\" : msg.device.name & \"-uplinkmbps\",\t   \"unit_of_measurement\": \"Mbps\",\t   \"value_template\": \"{{value_json.uplinkThroughputmbps}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:chart-line\" ,\t   \"state_topic\": \"dishy/uplinkmbps\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/uplinkmbps/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 520,
+        "y": 140,
+        "wires": [
+            [
+                "4890a38321377103",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "d493f3f26c0c45e4",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Latency Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Latency to POP\" ,\t   \"unique_id\" : msg.device.name & \"-\" & \"latency\",\t   \"unit_of_measurement\": \"ms\",\t   \"value_template\": \"{{value_json.popPingLatencyMs}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:graphql\",\t   \"state_topic\": \"dishy/latency\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/latency/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 260,
+        "wires": [
+            [
+                "eb2a5ed4e682a0b9",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "5ec8f69697bc5831",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Obstruction Time Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Avg Obstruction Time\" ,\t   \"unique_id\" : msg.device.name & \"-\" & \"avgobstruction\",\t   \"device_class\": \"duration\",\t   \"unit_of_measurement\": \"s\",\t   \"value_template\": \"{{value_json.avgProlongedObstructionDurationS}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:timeline-clock\",\t   \"state_topic\": \"dishy/avgobstructiontime\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/avgobstime/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 520,
+        "y": 300,
+        "wires": [
+            [
+                "f66903d13b8ce75f",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "a9d5d7ca33e0e4f9",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Obstruction Interval Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Avg Obstruction Interval\" ,\t   \"unique_id\" : msg.device.name & \"-\" & \"avgobstructioninterval\",\t   \"device_class\": \"duration\",\t   \"unit_of_measurement\": \"s\",\t   \"value_template\": \"{{value_json.avgProlongedObstructionIntervalS}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:timeline-clock\",\t   \"state_topic\": \"dishy/avgobstructioninterval\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/avgobsinterval/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 530,
+        "y": 340,
+        "wires": [
+            [
+                "9fdbc7d05a77967d",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "c21862cfa9cfa84b",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Satellites Discovery",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"name\": msg.device.name & \" Sats\" ,\t   \"unique_id\" : msg.device.name & \"-\" & \"sats\",\t   \"unit_of_measurement\": \"Satellites\",\t   \"value_template\": \"{{value_json.gpsSats}}\",\t   \"device\": msg.device ,\t   \"icon\": \"mdi:satellite-variant\",\t   \"state_topic\": \"dishy/sats\"\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "homeassistant/sensor/dishy/sats/config",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 380,
+        "wires": [
+            [
+                "f66a86082814d4fb",
+                "fb835176137fc199"
+            ]
+        ]
+    },
+    {
+        "id": "1cb3ecbb47e83622",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Uptime State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.deviceState",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/uptime",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 690,
+        "y": 220,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "09df530325c0fdb7",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Downlink Mbps State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.downlinkThroughputBps",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/downlinkmbps",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 800,
+        "y": 180,
+        "wires": [
+            [
+                "11bcd592ea9b902c"
+            ]
+        ]
+    },
+    {
+        "id": "4890a38321377103",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Uplink Mbps State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.uplinkThroughputBps",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/uplinkmbps",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "07e8eac4ed14c402"
+            ]
+        ]
+    },
+    {
+        "id": "eb2a5ed4e682a0b9",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Latency State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.popPingLatencyMs",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.popPingLatencyMs",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/latency",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 260,
+        "wires": [
+            [
+                "428b95194a188c86"
+            ]
+        ]
+    },
+    {
+        "id": "f66903d13b8ce75f",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Obstruction Time State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.avgProlongedObstructionDurationS",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.obstructionStats.avgProlongedObstructionDurationS",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/avgobstructiontime",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 300,
+        "wires": [
+            [
+                "ea3079e307ae5e5f"
+            ]
+        ]
+    },
+    {
+        "id": "9fdbc7d05a77967d",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Obstruction Interval State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.fractionObstructed",
+                "pt": "msg",
+                "to": "oldpayload.payload.dishGetStatus.obstructionStats.fractionObstructed",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/fractionobstructed",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 340,
+        "wires": [
+            [
+                "aa3399529b8d526a"
+            ]
+        ]
+    },
+    {
+        "id": "f66a86082814d4fb",
+        "type": "change",
+        "z": "2916350a149f22e4",
+        "name": "Satellites State",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "discovery_payload",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.gpsSats",
+                "pt": "msg",
+                "to": "oldpayload.dishGetStatus.gpsStats.gpsSats",
+                "tot": "msg",
+                "dc": true
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "dishy/sats",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 380,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "11bcd592ea9b902c",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Bits to Mbits",
+        "func": "msg.payloadbps = msg.payload\ndelete msg.payload\nmsg.payload = {};\nmsg.payload.downlinkmbps = msg.payloadbps / 1000000\nmsg.payload.downlinkThroughputmbps = parseFloat(msg.payload.downlinkmbps.toFixed(2));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 180,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "07e8eac4ed14c402",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Bits to Mbits",
+        "func": "msg.payloadbps = msg.payload\ndelete msg.payload\nmsg.payload = {};\nmsg.payload.uplinkmbps = msg.payloadbps / 1000000\nmsg.payload.uplinkThroughputmbps = parseFloat(msg.payload.uplinkmbps.toFixed(2));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1030,
+        "y": 140,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "428b95194a188c86",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Cleanup Decimals",
+        "func": "msg.payload.popPingLatencyMs = parseFloat(msg.payload.popPingLatencyMs.toFixed(2));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 260,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "ea3079e307ae5e5f",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Cleanup Decimals",
+        "func": "msg.payload.avgProlongedObstructionDurationS = parseFloat(msg.payload.avgProlongedObstructionDurationS.toFixed(2));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 300,
+        "wires": [
+            [
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "aa3399529b8d526a",
+        "type": "function",
+        "z": "2916350a149f22e4",
+        "name": "Cleanup Decimals",
+        "func": "msg.payload.avgProlongedObstructionIntervalS = parseFloat(msg.payload.avgProlongedObstructionIntervalS.toFixed(2));\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 340,
+        "wires": [
+            [
+                "172e5fe912a4b521",
+                "21b93be11ae97095"
+            ]
+        ]
+    },
+    {
+        "id": "172e5fe912a4b521",
+        "type": "debug",
+        "z": "2916350a149f22e4",
+        "name": "debug 6",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1220,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "21b93be11ae97095",
+        "type": "link out",
+        "z": "2916350a149f22e4",
+        "name": "State OUT",
+        "mode": "link",
+        "links": [
+            "1aa54f1ab44b7ac9"
+        ],
+        "x": 1355,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "fb835176137fc199",
+        "type": "link out",
+        "z": "2916350a149f22e4",
+        "name": "Discovery OUT",
+        "mode": "link",
+        "links": [
+            "234d9d7985997eb3"
+        ],
+        "x": 1355,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "775803c3dc8bd646",
+        "type": "debug",
+        "z": "2916350a149f22e4",
+        "name": "debug 15",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 260,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "645dab750a116f7a",
+        "type": "switch",
+        "z": "2916350a149f22e4",
+        "name": "",
+        "property": "oldpayload.dishGetStatus.obstructionStats.avgProlongedObstructionIntervalS",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "neq",
+                "v": "NaN",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 290,
+        "y": 360,
+        "wires": [
+            [
+                "a9d5d7ca33e0e4f9"
+            ],
+            []
+        ]
+    }
+]
